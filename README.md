@@ -132,6 +132,7 @@ What is **not** covered by automated tests: the LLM-driven loop itself (it needs
 ## Limitations
 
 - Results depend on the model; small local models often struggle with multi-step browsing.
+- Live check performed: one task ("open https://example.com and say what the page says") ran end to end with a local Ollama `llama3.2` model driving Playwright MCP, and the report matched the page. Longer multi-step tasks and hosted models were not part of that check.
 - Sites that require login, CAPTCHAs or heavy anti-bot measures are out of scope by design.
 - One instruction runs at a time and the conversation history is kept in memory for the session.
 
