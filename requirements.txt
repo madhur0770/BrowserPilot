@@ -1,4 +1,5 @@
 # Runtime dependencies. Lower bounds are the versions this project was written against.
 streamlit>=1.37.0
 mcp-agent>=0.0.14
+mcp>=1.6,<2   # mcp 2.x removed the FastMCP module that mcp-agent imports
 openai>=1.0.0
