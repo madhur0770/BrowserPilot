@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!*.env.example
+mcp_agent.secrets.yaml
+logs/
+*.jsonl
+.pytest_cache/
+node_modules/
+.playwright-mcp/

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BrowserPilot</title>
+<meta name="description" content="Control a real browser with plain-English instructions through the Model Context Protocol and Playwright.">
+<style>
+:root{--bg:#fafaf9;--fg:#1c1917;--muted:#57534e;--card:#fff;--line:#e7e5e4;--accent:#2563eb;--code:#f5f5f4}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1115;--fg:#e7e5e4;--muted:#a8a29e;--card:#171a21;--line:#292e38;--accent:#7aa2f7;--code:#12151b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:48px 16px 64px}
+h1{font-size:2.2rem;margin:0 0 .25rem;letter-spacing:-.02em}
+h2{font-size:1.25rem;margin:2.5rem 0 .75rem}
+.lead{font-size:1.15rem;color:var(--muted);margin:0 0 1.25rem}
+a{color:var(--accent)}
+.btns{display:flex;flex-wrap:wrap;gap:.6rem;margin:1.25rem 0}
+.btn{display:inline-block;padding:.55rem 1rem;border-radius:8px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600;color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+pre,code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9rem}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto}
+img{max-width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:.95rem;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;background:var(--code)}
+.table-wrap{overflow-x:auto}
+.note{border-left:3px solid var(--accent);padding:.2rem 1rem;background:var(--card);border-radius:0 8px 8px 0;color:var(--muted)}
+ul{padding-left:1.2rem}
+footer{margin-top:3rem;color:var(--muted);font-size:.9rem}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1rem 0}
+.flow span{padding:.45rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:.9rem}
+.flow i{font-style:normal;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <h1>BrowserPilot</h1>
+  <p class="lead">Control a real browser with plain-English instructions, through the Model Context Protocol and Playwright.</p>
+  <p>A Streamlit app where an LLM (OpenAI or a local Ollama model) plans browsing steps and calls Playwright MCP tools to navigate, click, read and capture pages. It ships with network guardrails and a tool layer that is tested end to end without an LLM. By Madhur Kumar Rana.</p>
+  <div class="btns">
+    <a class="btn primary" href="https://github.com/madhur0770/BrowserPilot">View on GitHub</a>
+    <a class="btn" href="https://github.com/madhur0770/BrowserPilot/actions/workflows/ci.yml">CI status</a>
+    <a class="btn" href="https://github.com/madhur0770/BrowserPilot/blob/main/docs/architecture.md">Architecture and threat model</a>
+  </div>
+  <p class="note">This page is a showcase. The agent is not hosted publicly: it needs an LLM key and drives a real browser, so you run it yourself in a few commands.</p>
+
+  <h2>The interface</h2>
+  <p>Describe a task in plain English; the guardrails run before any browser or model is involved. Below, an instruction aimed at a cloud-metadata address is rejected up front.</p>
+  <img src="assets/ui-home.png" alt="BrowserPilot Streamlit interface with example instructions and safety defaults" width="960" height="496" loading="lazy">
+  <img src="assets/ui-blocked.png" alt="Error shown when an instruction targets a blocked cloud-metadata address" width="960" height="496" loading="lazy" style="margin-top:1rem">
+
+  <h2>Evidence it works</h2>
+  <p>The screenshot below was captured by the repository's end-to-end test: a real browser, driven through the real Playwright MCP server, on a bundled fictional site. No LLM or internet involved.</p>
+  <img src="assets/screenshot.png" alt="Pricing page of the fictional demo site captured by the smoke test" width="780" height="500">
+  <pre><code>node scripts/mcp_smoke_test.mjs --screenshot docs/assets/screenshot.png
+PASS  navigates to home page
+PASS  clicks through to pricing
+PASS  extracts table rows via evaluate
+PASS  takes a screenshot
+PASS  default policy blocks loopback origins
+All checks passed.</code></pre>
+
+  <h2>How it works</h2>
+  <div class="flow" aria-label="Execution flow">
+    <span>Streamlit UI</span><i>&rarr;</i><span>Validation</span><i>&rarr;</i><span>Agent + LLM</span><i>&rarr;</i><span>Playwright MCP (pinned)</span><i>&rarr;</i><span>Chromium</span>
+  </div>
+  <ul>
+    <li><strong>Validation:</strong> only http/https; loopback, private and cloud-metadata targets rejected.</li>
+    <li><strong>Isolation:</strong> headless browser with an in-memory profile and a default blocked-origins policy.</li>
+    <li><strong>Prompt-injection stance:</strong> page content is treated as untrusted data; no logins, payments or downloads unless asked.</li>
+  </ul>
+
+  <h2>Run it</h2>
+<pre><code>git clone https://github.com/madhur0770/BrowserPilot.git
+cd BrowserPilot
+pip install -r requirements.txt
+export OPENAI_API_KEY=your-key
+streamlit run app.py</code></pre>
+
+  <h2>Engineering evidence</h2>
+  <ul>
+    <li>Unit tests for validation, settings, policy/config drift and runner pre-flight; Streamlit UI smoke test.</li>
+    <li>CI on Ubuntu and Windows (Python 3.11 and 3.12) plus a browser end-to-end job.</li>
+    <li>Pinned Playwright MCP version, shared policy file read by Python and Node.</li>
+  </ul>
+
+  <h2>Known limitations</h2>
+  <ul>
+    <li>The LLM-driven loop is not covered by automated tests (needs a model; non-deterministic).</li>
+    <li>Origin blocking is defence in depth, not a security boundary; it does not cover redirects.</li>
+    <li>Small local models often struggle with multi-step browsing.</li>
+  </ul>
+
+  <footer>&copy; 2026 Madhur Kumar Rana &middot; <a href="https://github.com/madhur0770/BrowserPilot">Source</a></footer>
+</main>
+</body>
+</html>

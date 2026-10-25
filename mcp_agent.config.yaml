@@ -1,0 +1,37 @@
+execution_engine: asyncio
+
+logger:
+  transports: [console, file]
+  level: info
+  progress_display: true
+  path_settings:
+    path_pattern: "logs/mcp-agent-{unique_id}.jsonl"
+    unique_id: "timestamp"
+    timestamp_format: "%Y%m%d_%H%M%S"
+
+mcp:
+  servers:
+    playwright:
+      command: "npx"
+      # The Playwright MCP version is pinned (see browserpilot/policy.json) so behaviour is
+      # reproducible. --isolated keeps the browser profile in memory, and --blocked-origins
+      # applies the default network policy (kept in sync with policy.json by a test).
+      args:
+        - "@playwright/mcp@0.0.68"
+        - "--headless"
+        - "--isolated"
+        - "--blocked-origins"
+        - "http://localhost:*;https://localhost:*;http://127.0.0.1:*;https://127.0.0.1:*;http://[::1]:*;https://[::1]:*;http://0.0.0.0:*;http://169.254.169.254;http://metadata.google.internal"
+
+openai:
+  # The API key is read from OPENAI_API_KEY or from mcp_agent.secrets.yaml (git-ignored).
+  default_model: "gpt-4o-mini"
+
+# To use a local Ollama server instead, replace the openai block above with:
+#
+# openai:
+#   base_url: "http://localhost:11434/v1"
+#   default_model: "llama3.2"
+#
+# and put any non-empty placeholder api_key (for example "ollama") in mcp_agent.secrets.yaml.
+# Choose a model that supports tool calling; small models may follow multi-step browsing poorly.
